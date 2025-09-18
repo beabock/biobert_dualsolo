@@ -81,7 +81,13 @@ def run_classification_evaluation():
         tokenizer = AutoTokenizer.from_pretrained(base_model)
         train_texts = train_df['abstract_text'].tolist()
         train_labels = train_df['label'].tolist()
+        # Split train into train and eval for monitoring
+        from sklearn.model_selection import train_test_split
+        train_texts, eval_texts, train_labels, eval_labels = train_test_split(
+            train_texts, train_labels, test_size=0.2, random_state=42, stratify=train_labels
+        )
         train_dataset = TextDataset(train_texts, train_labels, tokenizer)
+        eval_dataset = TextDataset(eval_texts, eval_labels, tokenizer)
         training_args = TrainingArguments(
             output_dir='./results_classification',
             num_train_epochs=5,
@@ -90,11 +96,16 @@ def run_classification_evaluation():
             weight_decay=0.01,
             save_steps=500,
             logging_steps=100,
+            eval_strategy='epoch',
+            save_strategy='epoch',
+            load_best_model_at_end=True,
+            metric_for_best_model='eval_loss',
         )
         trainer = Trainer(
             model=model,
             args=training_args,
             train_dataset=train_dataset,
+            eval_dataset=eval_dataset,
         )
         trainer.train()
         model.save_pretrained(model_path)
@@ -171,11 +182,13 @@ def generate_classification_curves():
             plt.title('Validation Accuracy')
             plt.legend()
         plt.tight_layout()
+        plt.savefig('figures/training_curves.png')
         buffer = BytesIO()
         plt.savefig(buffer, format='png')
         buffer.seek(0)
         image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
         plt.close()
+        print("Training curves saved to figures/training_curves.png")
         return f"data:image/png;base64,{image_base64}"
     except:
         return None
@@ -196,11 +209,13 @@ def generate_classification_confusion_matrix(true_labels, pred_labels):
     plt.ylabel('True Label')
     plt.xlabel('Predicted Label')
     plt.tight_layout()
+    plt.savefig('figures/confusion_matrix.png')
     buffer = BytesIO()
     plt.savefig(buffer, format='png')
     buffer.seek(0)
     image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
     plt.close()
+    print("Confusion matrix saved to figures/confusion_matrix.png")
     return f"data:image/png;base64,{image_base64}"
 
 def generate_classification_predictions():

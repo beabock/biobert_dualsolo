@@ -95,7 +95,7 @@ pip install -r requirements.txt
 ## Limitations and Future Work
 
 This pilot study demonstrates proof-of-concept but has several limitations:
-- Small dataset size (XX abstracts total)
+- Small dataset size (58 abstracts total)
 - Manual curation required for training data
 - Domain-specific performance may vary
 - No multi-label classification for complex lifestyles
@@ -110,11 +110,11 @@ Future directions include:
 
 For grant applications, cite this work as:
 
-[Your Name]. (2025). *BioBERT Dual Lifestyle Classifier: A Pilot Study for Automated Classification of Fungal Lifestyles from Scientific Abstracts* [Computer software]. Available at: [GitHub URL]
+Beatrice Bock. (2025). *BioBERT Dual Lifestyle Classifier: A Pilot Study for Automated Classification of Fungal Lifestyles from Scientific Abstracts* [Computer software]. Available at: https://github.com/beabock/biobert_dualsolo
 
 ### References
 - Lee, J., et al. (2020). BioBERT: a pre-trained biomedical language representation model for biomedical text mining. *Bioinformatics*, 36(4), 1234-1240.
-- Devlin, J., et al. (2019). BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding. *arXiv preprint arXiv:1810.04805*.
+- Devlin, J., et al. (2019). BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding. *Proceedings of the 2019 conference of the North American chapter of the association for computational linguistics: human language technologies, volume 1 (long and short papers).* *arXiv preprint arXiv:1810.04805*.
 
 ## License
 
@@ -122,4 +122,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-[Your contact information here]
+Beatrice Bock
+bmb646@nau.edu
