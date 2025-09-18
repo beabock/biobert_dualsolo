@@ -15,7 +15,7 @@ The model achieves approximately 86% accuracy on a test set of manually curated 
 - **Categories**:
   - Dual (n=28): Papers describing fungi that can occupy multiple trophic modes
   - Solo (n=28): Papers describing fungi limited to a single trophic mode
-- **Total abstracts**: 56 (after preprocessing)
+- **Total abstracts**: 58 (after preprocessing)
 
 ### Preprocessing
 - Parsed BibTeX files using `parse_bib.py` to extract titles, abstracts, and keywords
@@ -31,6 +31,10 @@ The model achieves approximately 86% accuracy on a test set of manually curated 
   - Batch size: 8
   - Epochs: 10
   - Optimizer: AdamW with weight decay
+- **Enhanced Monitoring**:
+  - Real-time training curve generation
+  - Incremental plotting after each epoch
+  - Storage-optimized checkpoint management
 - **Hardware**: Trained on CPU/GPU (depending on availability)
 
 ### Evaluation
@@ -52,6 +56,8 @@ The model achieves approximately 86% accuracy on a test set of manually curated 
 - Highest accuracy on abstracts with clear trophic mode indicators
 - Some confusion between borderline cases requiring domain expertise
 - Training converged within 10 epochs, indicating efficient learning
+- Enhanced monitoring system provides real-time training curve visualization
+- Storage-optimized training prevents disk space issues during model development
 
 ### Example Predictions
 - **Dual**: "This fungus can switch between saprotrophic decomposition and pathogenic infection depending on environmental conditions."
@@ -83,13 +89,29 @@ pip install -r requirements.txt
 
 3. **Interactive exploration**: Open `bioBERT_dual_lifestyle_classifier.ipynb` in Jupyter
 
+### Monitoring Training Progress
+
+The enhanced training pipeline provides real-time monitoring capabilities:
+
+- **Live Training Curves**: Automatically generated plots showing training loss, validation loss, and validation accuracy
+- **Incremental Updates**: Plots update after each epoch, allowing you to monitor convergence in real-time
+- **Storage Efficiency**: Single plot file that's overwritten, minimizing disk usage
+- **Debug Output**: Console messages confirm successful plot generation and training progress
+
+During training, check `figures/training_curves.png` to observe:
+- Steady decrease in training loss
+- Validation loss following training loss with minimal gap
+- Increasing validation accuracy
+- Early detection of overfitting or training issues
+
 ### File Structure
 - `datasets/`: Source BibTeX files (dual.bib, solo.bib)
 - `parse_bib.py`: Data extraction and preprocessing
 - `nlp_prep.py`: Tokenization script
-- `generate_report.py`: Full pipeline automation
+- `generate_report.py`: Full pipeline automation with real-time monitoring
 - `bioBERT_dual_lifestyle_classifier.ipynb`: Interactive notebook
 - `train.csv`, `test.csv`: Processed datasets
+- `figures/`: Training curves and evaluation plots
 - `project_report.html`: Generated evaluation report
 
 ## Limitations and Future Work
@@ -105,12 +127,13 @@ Future directions include:
 - Incorporating multi-modal data (images, phylogenetic trees)
 - Developing active learning approaches for efficient annotation
 - Exploring other transformer architectures optimized for scientific text
+- Further enhancements to real-time monitoring and automated early stopping
 
 ## Citations
 
 For grant applications, cite this work as:
 
-Beatrice Bock. (2025). *BioBERT Dual Lifestyle Classifier: A Pilot Study for Automated Classification of Fungal Lifestyles from Scientific Abstracts* [Computer software]. Available at: https://github.com/beabock/biobert_dualsolo
+Beatrice Bock. (2025). *BioBERT Dual Lifestyle Classifier: A Pilot Study for Automated Classification of Fungal Lifestyles from Scientific Abstracts with Real-time Training Monitoring* [Computer software]. Available at: https://github.com/beabock/biobert_dualsolo
 
 ### References
 - Lee, J., et al. (2020). BioBERT: a pre-trained biomedical language representation model for biomedical text mining. *Bioinformatics*, 36(4), 1234-1240.
