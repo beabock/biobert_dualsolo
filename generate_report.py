@@ -279,10 +279,10 @@ def generate_classification_predictions():
     model = AutoModelForSequenceClassification.from_pretrained(model_path)
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     examples = [
-        "This study examines the symbiotic relationship between algae and fungi in lichens, representing a dual lifestyle.",
-        "The bacterium exhibits a solitary existence in its natural habitat, showing no symbiotic interactions.",
-        "Fungal endophytes form mutualistic associations with plants, demonstrating a dual existence.",
-        "Single-celled organisms in this experiment display independent growth patterns."
+        "This fungus can switch between saprotrophic decomposition of dead organic matter and forming mutualistic symbioses with plant roots, demonstrating a dual trophic lifestyle.",
+        "This saprotrophic fungus specializes exclusively in decomposing dead plant material and cannot form symbiotic associations.",
+        "The pathogenic fungus infects living plants but can also survive saprotrophically on dead plant tissues, exhibiting dual trophic modes.",
+        "This obligate symbiont fungus can only survive in mutualistic association with its host plant and cannot decompose dead organic matter independently."
     ]
     model.eval()
     predictions = []

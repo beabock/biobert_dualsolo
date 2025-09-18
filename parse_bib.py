@@ -163,7 +163,7 @@ def main():
 
     print("✅ Parsing completed successfully!")
     print(f"📊 Final dataset: {len(df)} total abstracts")
-    print(f"🎯 Test set now has {len(test_df)} samples (was 7 before)")
+    print(f"🎯 Test set now has {len(test_df)} samples")
 
 if __name__ == '__main__':
     main()
