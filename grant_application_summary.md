@@ -1,3 +1,8 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
 # Grant Application Summary: BioBERT Fungal Trophic Mode Classifier
 
 ## Project Overview
