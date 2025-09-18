@@ -18,7 +18,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import metrics as sk_metrics
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments, TrainerCallback
 import datasets
 import numpy as np
 import torch
@@ -55,6 +55,52 @@ class TextDataset(Dataset):
             'attention_mask': encoding['attention_mask'].flatten(),
             'labels': torch.tensor(label, dtype=torch.long)
         }
+def plot_curves_from_log(log_history, output_path):
+    if not log_history:
+        return
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    steps = [entry.get('step', 0) for entry in log_history if 'loss' in entry]
+    train_loss = [entry['loss'] for entry in log_history if 'loss' in entry]
+    eval_loss = [entry.get('eval_loss', None) for entry in log_history if 'eval_loss' in entry]
+    eval_accuracy = [entry.get('eval_accuracy', None) for entry in log_history if 'eval_accuracy' in entry]
+
+    plt.figure(figsize=(12, 4))
+
+    plt.subplot(1, 3, 1)
+    plt.plot(steps, train_loss, label='Training Loss')
+    plt.xlabel('Step')
+    plt.ylabel('Loss')
+    plt.title('Training Loss')
+    plt.legend()
+
+    valid_steps = [entry.get('step', 0) for entry in log_history if 'eval_loss' in entry]
+    if eval_loss:
+        plt.subplot(1, 3, 2)
+        plt.plot(valid_steps, eval_loss, label='Validation Loss')
+        plt.xlabel('Step')
+        plt.ylabel('Loss')
+        plt.title('Validation Loss')
+        plt.legend()
+
+    if eval_accuracy:
+        plt.subplot(1, 3, 3)
+        plt.plot(valid_steps, eval_accuracy, label='Validation Accuracy')
+        plt.xlabel('Step')
+        plt.ylabel('Accuracy')
+        plt.title('Validation Accuracy')
+        plt.legend()
+
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.close()
+
+
+class IncrementalPlotCallback(TrainerCallback):
+    def on_evaluate(self, args, state, control, **kwargs):
+        print(f"IncrementalPlotCallback: Updating plot after evaluation. Log history length: {len(state.log_history)}")
+        plot_curves_from_log(state.log_history, 'figures/training_curves.png')
+        print("IncrementalPlotCallback: Plot updated successfully.")
+
 
 def run_data_loading():
     """Run data loading component"""
@@ -63,6 +109,12 @@ def run_data_loading():
     import parse_bib
     parse_bib.main()
     print("Data loading completed.")
+
+def compute_metrics(eval_pred):
+    predictions, labels = eval_pred
+    preds = np.argmax(predictions, axis=1)
+    accuracy = sk_metrics.accuracy_score(labels, preds)
+    return {'eval_accuracy': accuracy}
 
 def run_classification_evaluation():
     """Run classification evaluation and return results"""
@@ -90,15 +142,15 @@ def run_classification_evaluation():
         eval_dataset = TextDataset(eval_texts, eval_labels, tokenizer)
         training_args = TrainingArguments(
             output_dir='./results_classification',
-            num_train_epochs=5,
+            num_train_epochs=10,
             per_device_train_batch_size=8,
-            learning_rate=2e-5,
+            learning_rate=5e-5,
             weight_decay=0.01,
             save_steps=500,
-            logging_steps=100,
+            logging_steps=10,
             eval_strategy='epoch',
-            save_strategy='epoch',
-            load_best_model_at_end=True,
+            save_strategy='no',
+            load_best_model_at_end=False,
             metric_for_best_model='eval_loss',
         )
         trainer = Trainer(
@@ -106,6 +158,8 @@ def run_classification_evaluation():
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
+            compute_metrics=compute_metrics,
+            callbacks=[IncrementalPlotCallback()],
         )
         trainer.train()
         model.save_pretrained(model_path)
@@ -316,19 +370,19 @@ INSTRUCTIONS = """
 To run this script:
 
 1. Ensure all dependencies are installed:
-   pip install transformers datasets torch scikit-learn matplotlib seaborn pandas
+    pip install transformers datasets torch scikit-learn matplotlib seaborn pandas
 
 2. Run the script:
-   python generate_report.py
+    python generate_report.py
 
 3. The script will:
-   - Load and preprocess data
-   - Fine-tune the BioBERT model for dual lifestyle classification
-   - Evaluate the model
-   - Generate plots and visualizations
-   - Create an HTML report (project_report.html)
+    - Load and preprocess data
+    - Fine-tune the BioBERT model for dual lifestyle classification (with incremental plotting of training curves after each epoch)
+    - Evaluate the model
+    - Generate plots and visualizations
+    - Create an HTML report (project_report.html)
 
-Note: Fine-tuning may take some time depending on your hardware.
+Note: Fine-tuning may take some time depending on your hardware. The training curves plot will update progressively during training, allowing you to monitor progress in real-time.
 """
 
 if __name__ == '__main__':

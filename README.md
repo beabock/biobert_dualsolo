@@ -4,7 +4,7 @@ This project implements a pilot experiment using BioBERT (a biomedical language 
 
 ## Overview
 
-Fungi exhibit diverse lifestyles ranging from solitary saprophytes to complex symbionts. Accurately classifying research papers on fungal lifestyles is crucial for advancing mycological research. This pilot study demonstrates the feasibility of using fine-tuned BioBERT models for automated classification of fungal lifestyle descriptions from scientific abstracts.
+Fungi exhibit diverse lifestyles ranging from solitary saprotrophs to complex symbionts. Accurately classifying research papers on fungal lifestyles is crucial for advancing mycological research, especially in the context of a Saprotrophy-Symbiosis Continuum (Martin and Tan, 2025). This pilot study demonstrates the feasibility of using fine-tuned BioBERT models for automated classification of fungal lifestyle descriptions from scientific abstracts.
 
 The model achieves approximately 86% accuracy on a test set of manually curated abstracts, showing promise for scaling to larger datasets and broader mycological literature.
 
@@ -13,9 +13,9 @@ The model achieves approximately 86% accuracy on a test set of manually curated 
 ### Data Collection
 - **Source**: Curated BibTeX files containing fungal research papers
 - **Categories**:
-  - Dual (n=29): Papers describing fungi that can occupy multiple trophic modes
-  - Solo (n=29): Papers describing fungi limited to a single trophic mode
-- **Total abstracts**: 58 (after preprocessing)
+  - Dual (n=28): Papers describing fungi that can occupy multiple trophic modes
+  - Solo (n=28): Papers describing fungi limited to a single trophic mode
+- **Total abstracts**: 56 (after preprocessing)
 
 ### Preprocessing
 - Parsed BibTeX files using `parse_bib.py` to extract titles, abstracts, and keywords
@@ -27,9 +27,9 @@ The model achieves approximately 86% accuracy on a test set of manually curated 
 - **Base Model**: `monologg/biobert_v1.1_pubmed` (BioBERT v1.1 trained on PubMed)
 - **Task**: Binary sequence classification
 - **Training Parameters**:
-  - Learning rate: 2e-5
+  - Learning rate: 5e-5
   - Batch size: 8
-  - Epochs: 5
+  - Epochs: 10
   - Optimizer: AdamW with weight decay
 - **Hardware**: Trained on CPU/GPU (depending on availability)
 
@@ -51,7 +51,7 @@ The model achieves approximately 86% accuracy on a test set of manually curated 
 - The model performs well at distinguishing single vs. multiple trophic mode fungal descriptions
 - Highest accuracy on abstracts with clear trophic mode indicators
 - Some confusion between borderline cases requiring domain expertise
-- Training converged within 5 epochs, indicating efficient learning
+- Training converged within 10 epochs, indicating efficient learning
 
 ### Example Predictions
 - **Dual**: "This fungus can switch between saprotrophic decomposition and pathogenic infection depending on environmental conditions."
