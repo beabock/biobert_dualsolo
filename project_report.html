@@ -16,7 +16,22 @@
     <body>
         <h1>BioBERT Dual Lifestyle Classification Project Report</h1>
 
-        <h2>Classification Evaluation Metrics</h2>
+        <h2>Abstract</h2>
+        <p>This pilot study demonstrates the feasibility of using fine-tuned BioBERT models for automated classification of fungal trophic modes from scientific abstracts. We achieved 86% accuracy in distinguishing fungi capable of multiple trophic modes ("dual") from those limited to single modes ("solo"), establishing a foundation for scaling to larger mycological datasets and advancing research in fungal ecology and taxonomy.</p>
+
+        <h2>Introduction</h2>
+        <p>Fungi exhibit diverse trophic strategies, with some taxa capable of occupying multiple modes (e.g., both saprotrophic and pathogenic) while others are restricted to single modes. Accurate classification of research papers on fungal trophic versatility is crucial for mycological research. This project explores automated classification using BioBERT, a biomedical language model, as a pilot experiment to assess viability for broader application.</p>
+
+        <h2>Methodology</h2>
+        <h3>Data Collection</h3>
+        <p>Data was sourced from curated BibTeX files containing fungal research papers, categorized into dual (fungi that can occupy multiple trophic modes) and solo (fungi limited to single trophic modes). Abstracts were extracted, cleaned of HTML/LaTeX formatting, and split 60/40 for training/testing.</p>
+        <h3>Model Fine-tuning</h3>
+        <p>BioBERT v1.1 (pre-trained on PubMed) was fine-tuned for binary sequence classification with learning rate 2e-5, batch size 8, and 5 epochs.</p>
+        <h3>Evaluation</h3>
+        <p>Performance was assessed using accuracy, precision, recall, F1-score, and confusion matrix analysis.</p>
+
+        <h2>Results</h2>
+        <h3>Classification Evaluation Metrics</h3>
         <table>
             <tr><th>Metric</th><th>Value</th></tr>
             <tr><td>Accuracy</td><td>0.8636</td></tr>
@@ -33,6 +48,12 @@
 
         <h2>Example Predictions</h2>
         <h3>Example Predictions</h3><ul><li><strong>Dual</strong>: This study examines the symbiotic relationship between algae and fungi in lichens, representing a dual lifestyle.</li><li><strong>Solo</strong>: The bacterium exhibits a solitary existence in its natural habitat, showing no symbiotic interactions.</li><li><strong>Dual</strong>: Fungal endophytes form mutualistic associations with plants, demonstrating a dual existence.</li><li><strong>Dual</strong>: Single-celled organisms in this experiment display independent growth patterns.</li></ul>
+
+        <h2>Conclusions</h2>
+        <p>This pilot experiment successfully demonstrates BioBERT's capability for fungal trophic mode classification with 86% accuracy. The model effectively distinguishes fungi capable of multiple trophic modes from those limited to single modes, providing a scalable approach for automated literature analysis in mycology.</p>
+
+        <h2>Limitations and Future Work</h2>
+        <p>Current limitations include small dataset size and potential for domain-specific improvements. Future work involves expanding datasets, incorporating multi-modal data, and developing active learning for efficient annotation. This establishes a foundation for larger-scale mycological text mining applications.</p>
 
     </body>
     </html>
