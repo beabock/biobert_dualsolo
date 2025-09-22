@@ -18,13 +18,44 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import metrics as sk_metrics
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments, TrainerCallback
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments, TrainerCallback, set_seed, EarlyStoppingCallback
 import datasets
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 import base64
 from io import BytesIO
+import random
+# ===== COMPREHENSIVE REPRODUCIBILITY SETUP =====
+# Set all seeds for reproducible results
+SEED = 1998
+
+# Set Python random seed
+random.seed(SEED)
+
+# Set NumPy random seed
+np.random.seed(SEED)
+
+# Set PyTorch random seed
+torch.manual_seed(SEED)
+
+# Set CUDA seeds (if using GPU)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(SEED)
+    torch.cuda.manual_seed_all(SEED)  # for multi-GPU
+
+# Set cuDNN to deterministic mode (may slow down training slightly)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
+# Set transformers seed
+set_seed(SEED)
+
+# Set environment variable for Python hash seed
+os.environ['PYTHONHASHSEED'] = str(SEED)
+
+print(f"✅ All random seeds set to {SEED} for reproducible results")
+# ===== END REPRODUCIBILITY SETUP =====
 
 # Import the project modules
 import sys
@@ -110,6 +141,19 @@ def run_data_loading():
     parse_bib.main()
     print("Data loading completed.")
 
+def compute_average_token_length():
+    """Compute average token length of abstracts using BioBERT tokenizer"""
+    print("Computing average token length...")
+    tokenizer = AutoTokenizer.from_pretrained('monologg/biobert_v1.1_pubmed')
+    abstracts_df = pd.read_csv('abstracts.csv')
+    lengths = []
+    for text in abstracts_df['abstract_text'].tolist():
+        tokens = tokenizer.tokenize(text)
+        lengths.append(len(tokens))
+    avg_length = sum(lengths) / len(lengths) if lengths else 0
+    print(f"Average token length: {avg_length:.2f}")
+    return avg_length
+
 def compute_metrics(eval_pred):
     predictions, labels = eval_pred
     preds = np.argmax(predictions, axis=1)
@@ -123,6 +167,25 @@ def run_classification_evaluation():
     train_df = pd.read_csv('train.csv')
     test_df = pd.read_csv('test.csv')
     base_model = 'monologg/biobert_v1.1_pubmed'
+    # Compute data distribution stats
+    train_class_counts = train_df['label'].value_counts()
+    train_total = len(train_df)
+    train_percentages = (train_class_counts / train_total * 100).round(2)
+    test_class_counts = test_df['label'].value_counts()
+    test_total = len(test_df)
+    test_percentages = (test_class_counts / test_total * 100).round(2)
+    data_stats = {
+        'train': {
+            'total': train_total,
+            'class_counts': train_class_counts.to_dict(),
+            'percentages': train_percentages.to_dict()
+        },
+        'test': {
+            'total': test_total,
+            'class_counts': test_class_counts.to_dict(),
+            'percentages': test_percentages.to_dict()
+        }
+    }
     # Force retrain by removing existing model
     if os.path.exists(model_path):
         import shutil
@@ -130,6 +193,9 @@ def run_classification_evaluation():
     if not os.path.exists(model_path):
         print("Training classification model...")
         model = AutoModelForSequenceClassification.from_pretrained(base_model, num_labels=2)
+        # Increase dropout for regularization
+        model.config.hidden_dropout_prob = 0.2
+        model.config.attention_probs_dropout_prob = 0.2
         tokenizer = AutoTokenizer.from_pretrained(base_model)
         train_texts = train_df['abstract_text'].tolist()
         train_labels = train_df['label'].tolist()
@@ -140,26 +206,43 @@ def run_classification_evaluation():
         )
         train_dataset = TextDataset(train_texts, train_labels, tokenizer)
         eval_dataset = TextDataset(eval_texts, eval_labels, tokenizer)
+        # Compute class weights for imbalance
+        from sklearn.utils.class_weight import compute_class_weight
+        class_weights = compute_class_weight('balanced', classes=np.unique(train_labels), y=train_labels)
+        class_weights = torch.tensor(class_weights, dtype=torch.float)
+        # Custom Trainer for weighted loss
+        class CustomTrainer(Trainer):
+            def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+                labels = inputs.get("labels")
+                outputs = model(**inputs)
+                logits = outputs.get("logits")
+                loss_fct = torch.nn.CrossEntropyLoss(weight=class_weights.to(logits.device))
+                loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+                return (loss, outputs) if return_outputs else loss
         training_args = TrainingArguments(
             output_dir='./results_classification',
-            num_train_epochs=10,
+            logging_dir='./logs',  # Ensure logs are saved
+            num_train_epochs=20,  # Allow more epochs, early stopping will halt
             per_device_train_batch_size=8,
             learning_rate=5e-5,
-            weight_decay=0.01,
+            weight_decay=0.05,  # Increased regularization
+            lr_scheduler_type='linear',  # Learning rate scheduler
             save_steps=500,
             logging_steps=10,
+            logging_strategy='steps',  # Explicit logging strategy
             eval_strategy='epoch',
-            save_strategy='no',
-            load_best_model_at_end=False,
+            save_strategy='epoch',  # Save checkpoints for best model
+            load_best_model_at_end=True,
             metric_for_best_model='eval_loss',
+            greater_is_better=False,
         )
-        trainer = Trainer(
+        trainer = CustomTrainer(
             model=model,
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             compute_metrics=compute_metrics,
-            callbacks=[IncrementalPlotCallback()],
+            callbacks=[EarlyStoppingCallback(early_stopping_patience=3), IncrementalPlotCallback()],
         )
         trainer.train()
         model.save_pretrained(model_path)
@@ -189,7 +272,8 @@ def run_classification_evaluation():
         'accuracy': accuracy,
         'precision': precision,
         'recall': recall,
-        'f1': f1
+        'f1': f1,
+        'data_stats': data_stats
     }, true_labels, preds
 
 def generate_classification_curves():
@@ -201,8 +285,7 @@ def generate_classification_curves():
     if trainer_state_paths:
         trainer_state_path = sorted(trainer_state_paths)[-1]  # latest checkpoint
     else:
-        # Fallback to NER if not found
-        trainer_state_path = 'results/checkpoint-6/trainer_state.json'
+        return None
     try:
         with open(trainer_state_path, 'r') as f:
             trainer_state = json.load(f)
@@ -273,32 +356,41 @@ def generate_classification_confusion_matrix(true_labels, pred_labels):
     return f"data:image/png;base64,{image_base64}"
 
 def generate_classification_predictions():
-    """Generate example classification predictions"""
+    """Generate example classification predictions from test set"""
     print("Generating classification predictions...")
     model_path = 'fine_tuned_biobert_classification'
     model = AutoModelForSequenceClassification.from_pretrained(model_path)
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    examples = [
-        "This fungus can switch between saprotrophic decomposition of dead organic matter and forming mutualistic symbioses with plant roots, demonstrating a dual trophic lifestyle.",
-        "This saprotrophic fungus specializes exclusively in decomposing dead plant material and cannot form symbiotic associations.",
-        "The pathogenic fungus infects living plants but can also survive saprotrophically on dead plant tissues, exhibiting dual trophic modes.",
-        "This obligate symbiont fungus can only survive in mutualistic association with its host plant and cannot decompose dead organic matter independently."
-    ]
+    test_df = pd.read_csv('test.csv')
+    # Take first 5 examples
+    sample_df = test_df.head(5)
+    examples = sample_df['abstract_text'].tolist()
+    actual_labels = ['Dual' if int(label) == 1 else 'Solo' for label in sample_df['label'].tolist()]
     model.eval()
     predictions = []
+    confidences = []
     for text in examples:
         inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True, max_length=512)
         with torch.no_grad():
             outputs = model(**inputs)
-            pred = torch.argmax(outputs.logits, dim=1).item()
+            logits = outputs.logits
+            probs = torch.softmax(logits, dim=1)
+            pred = torch.argmax(logits, dim=1).item()
+            conf = probs[0][pred].item()
             predictions.append('Dual' if pred == 1 else 'Solo')
-    html_viz = "<h3>Example Predictions</h3><ul>"
-    for i, (text, pred) in enumerate(zip(examples, predictions)):
-        html_viz += f"<li><strong>{pred}</strong>: {text}</li>"
-    html_viz += "</ul>"
-    return html_viz
+            confidences.append(conf)
+    # Return list of dictionaries
+    return [
+        {
+            'abstract_text': text,
+            'actual_label': actual,
+            'predicted_label': pred,
+            'confidence': conf
+        }
+        for text, actual, pred, conf in zip(examples, actual_labels, predictions, confidences)
+    ]
 
-def create_html_report(classification_metrics, classification_curve_img, classification_cm_img, classification_preds):
+def create_html_report(classification_metrics, classification_curve_img, classification_cm_img, prediction_list, avg_token_length, data_stats):
     """Create HTML report"""
     print("Creating HTML report...")
 
@@ -335,8 +427,21 @@ def create_html_report(classification_metrics, classification_curve_img, classif
         <h2>Confusion Matrix</h2>
         <img src="{classification_cm_img}" alt="Classification Confusion Matrix">
 
+        <h2>Data Distribution</h2>
+        <h3>Training Set</h3>
+        <p>Total samples: {data_stats['train']['total']}</p>
+        <p>Solo: {data_stats['train']['percentages'].get(0, 0)}%, Dual: {data_stats['train']['percentages'].get(1, 0)}%</p>
+        <h3>Test Set</h3>
+        <p>Total samples: {data_stats['test']['total']}</p>
+        <p>Solo: {data_stats['test']['percentages'].get(0, 0)}%, Dual: {data_stats['test']['percentages'].get(1, 0)}%</p>
+
+        <h2>Average Token Length</h2>
+        <p>{avg_token_length:.2f}</p>
+
         <h2>Example Predictions</h2>
-        {classification_preds}
+        <ul>
+        {"".join(f"<li><strong>Actual: {item['actual_label']}, Predicted: {item['predicted_label']}, Confidence: {item['confidence']:.4f}</strong><br>{item['abstract_text'][:200]}...</li>" for item in prediction_list)}
+        </ul>
 
     </body>
     </html>
@@ -354,14 +459,17 @@ def main():
     # Run components
     run_data_loading()
 
+    # Compute average token length
+    avg_token_length = compute_average_token_length()
+
     # Run classification
     classification_metrics, class_true_labels, class_pred_labels = run_classification_evaluation()
     classification_curve_img = generate_classification_curves()
     classification_cm_img = generate_classification_confusion_matrix(class_true_labels, class_pred_labels)
-    classification_preds = generate_classification_predictions()
+    prediction_list = generate_classification_predictions()
 
     # Create report
-    create_html_report(classification_metrics, classification_curve_img, classification_cm_img, classification_preds)
+    create_html_report(classification_metrics, classification_curve_img, classification_cm_img, prediction_list, avg_token_length, classification_metrics['data_stats'])
 
     print("Pipeline completed successfully!")
 
