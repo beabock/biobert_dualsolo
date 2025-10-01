@@ -148,10 +148,15 @@ def compute_average_token_length():
     abstracts_df = pd.read_csv('abstracts.csv')
     lengths = []
     for text in abstracts_df['abstract_text'].tolist():
-        tokens = tokenizer.tokenize(text)
-        lengths.append(len(tokens))
+        encoding = tokenizer.encode_plus(
+            text,
+            truncation=True,
+            max_length=512,
+            return_tensors=None
+        )
+        lengths.append(len(encoding['input_ids']))
     avg_length = sum(lengths) / len(lengths) if lengths else 0
-    print(f"Average token length: {avg_length:.2f}")
+    print(f"Average token length (after truncation to 512): {avg_length:.2f}")
     return avg_length
 
 def compute_metrics(eval_pred):
@@ -189,8 +194,15 @@ def run_classification_evaluation():
     # Force retrain by removing existing model
     if os.path.exists(model_path):
         import shutil
-        shutil.rmtree(model_path)
-    if not os.path.exists(model_path):
+        try:
+            shutil.rmtree(model_path)
+            print(f"Successfully removed existing model directory: {model_path}")
+        except OSError as e:
+            print(f"Warning: Failed to remove model directory '{model_path}': {e}. Proceeding with training anyway.")
+
+    # Check if model files exist; if not, train
+    model_file = os.path.join(model_path, 'pytorch_model.bin')
+    if not os.path.exists(model_file):
         print("Training classification model...")
         model = AutoModelForSequenceClassification.from_pretrained(base_model, num_labels=2)
         # Increase dropout for regularization

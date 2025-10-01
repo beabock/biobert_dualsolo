@@ -60,12 +60,42 @@ def extract_field_improved(text, field_name):
 
 def parse_bib_file(filepath, label):
     """Parse BibTeX file with improved error handling"""
+    import time
+    import subprocess
     entries = []
+    
+    # First, try to ensure OneDrive file is available locally
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            content = f.read()
-    except FileNotFoundError:
-        print(f"Warning: File {filepath} not found")
+        # Use PowerShell to force download if it's a OneDrive cloud file
+        subprocess.run(['powershell', '-Command', f'attrib -U +P "{filepath}"'], 
+                      check=False, capture_output=True)
+        time.sleep(1)  # Give OneDrive a moment to sync
+    except:
+        pass
+    
+    # Try multiple encoding strategies to handle different file formats
+    encodings_to_try = ['utf-8', 'latin-1', 'cp1252', 'utf-8-sig']
+    
+    for encoding in encodings_to_try:
+        try:
+            print(f"Trying to read {filepath} with {encoding} encoding...")
+            # Try reading in binary mode first to check if file is accessible
+            with open(filepath, 'rb') as f_bin:
+                raw_data = f_bin.read()
+            
+            # If binary read works, try text read
+            with open(filepath, 'r', encoding=encoding, errors='ignore') as f:
+                content = f.read()
+            print(f"Successfully read {filepath} with {encoding} encoding")
+            break
+        except (FileNotFoundError, UnicodeDecodeError, OSError, PermissionError) as e:
+            print(f"Failed to read with {encoding}: {e}")
+            if encoding == encodings_to_try[-1]:  # Last encoding attempt
+                print(f"Warning: Could not read file {filepath} with any encoding")
+                return entries
+            continue
+    else:
+        print(f"Warning: File {filepath} not accessible")
         return entries
 
     # Split by @ to find entries
