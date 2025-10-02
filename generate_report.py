@@ -88,12 +88,17 @@ class TextDataset(Dataset):
         }
 def plot_curves_from_log(log_history, output_path):
     if not log_history:
+        print("DEBUG: No log_history provided to plot_curves_from_log")
         return
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     steps = [entry.get('step', 0) for entry in log_history if 'loss' in entry]
     train_loss = [entry['loss'] for entry in log_history if 'loss' in entry]
     eval_loss = [entry.get('eval_loss', None) for entry in log_history if 'eval_loss' in entry]
     eval_accuracy = [entry.get('eval_accuracy', None) for entry in log_history if 'eval_accuracy' in entry]
+
+    print(f"DEBUG plot_curves_from_log: train steps: {steps}, train losses: {train_loss}")
+    print(f"DEBUG plot_curves_from_log: eval steps (non-None): {[s for s, l in zip([e.get('step',0) for e in log_history if 'eval_loss' in e], eval_loss) if l is not None]}")
+    print(f"DEBUG plot_curves_from_log: eval accuracies (non-None): {[a for a in eval_accuracy if a is not None]}")
 
     plt.figure(figsize=(12, 4))
 
