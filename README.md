@@ -4,7 +4,7 @@ This project implements a pilot experiment using BioBERT (a biomedical language 
 
 ## Overview
 
-Fungi exhibit diverse lifestyles ranging from solitary saprotrophs to complex symbionts. Accurately classifying research papers on fungal lifestyles is crucial for advancing mycological research, especially in the context of a Saprotrophy-Symbiosis Continuum (Martin and Tan, 2025). This pilot study demonstrates the feasibility of using fine-tuned BioBERT models for automated classification of fungal lifestyle descriptions from scientific abstracts.
+As a biology student at Northern Arizona University, I developed this tool to address the challenge of manually classifying fungal trophic modes from scientific literature. Fungi exhibit diverse lifestyles ranging from solitary saprotrophs to complex symbionts. Accurately classifying research papers on fungal lifestyles is crucial for advancing mycological research, especially in the context of a Saprotrophy-Symbiosis Continuum (Martin and Tan, 2025). This pilot study demonstrates the feasibility of using fine-tuned BioBERT models for automated classification of fungal lifestyle descriptions from scientific abstracts.
 
 The model achieves approximately 86% accuracy on a test set of manually curated abstracts, showing promise for scaling to larger datasets and broader mycological literature.
 

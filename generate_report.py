@@ -245,7 +245,7 @@ def run_classification_evaluation():
             weight_decay=0.05,  # Increased regularization
             lr_scheduler_type='linear',  # Learning rate scheduler
             save_steps=500,
-            logging_steps=10,
+            logging_steps=1,  # Log every step to capture training loss
             logging_strategy='steps',  # Explicit logging strategy
             eval_strategy='epoch',
             save_strategy='epoch',  # Save checkpoints for best model
