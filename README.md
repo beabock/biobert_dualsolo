@@ -4,7 +4,7 @@ This project implements a pilot experiment using BioBERT (a biomedical language 
 
 ## Overview
 
-As a biology student at Northern Arizona University, I developed this tool to address the challenge of manually classifying fungal trophic modes from scientific literature. Fungi exhibit diverse lifestyles ranging from solitary saprotrophs to complex symbionts. Accurately classifying research papers on fungal lifestyles is crucial for advancing mycological research, especially in the context of a Saprotrophy-Symbiosis Continuum (Martin and Tan, 2025). This pilot study demonstrates the feasibility of using fine-tuned BioBERT models for automated classification of fungal lifestyle descriptions from scientific abstracts.
+Fungi exhibit diverse lifestyles ranging from solitary saprotrophs to complex symbionts. Accurately classifying research papers on fungal lifestyles is crucial for advancing mycological research, especially in the context of a Saprotrophy-Symbiosis Continuum (Martin and Tan, 2025). This pilot study demonstrates the feasibility of using fine-tuned BioBERT models for automated classification of fungal lifestyle descriptions from scientific abstracts.
 
 The model achieves approximately 86% accuracy on a test set of manually curated abstracts, showing promise for scaling to larger datasets and broader mycological literature.
 
@@ -58,12 +58,6 @@ The model achieves approximately 86% accuracy on a test set of manually curated 
 - Training converged within 10 epochs, indicating efficient learning
 - Enhanced monitoring system provides real-time training curve visualization
 - Storage-optimized training prevents disk space issues during model development
-
-### Example Predictions
-- **Dual**: "This fungus can switch between saprotrophic decomposition and pathogenic infection depending on environmental conditions."
-- **Solo**: "This fungus is strictly saprotrophic, specializing in the decomposition of dead plant material."
-- **Dual**: "The endophytic fungus forms mutualistic associations with plants but can become pathogenic under stress."
-- **Solo**: "The mycorrhizal fungus exclusively forms symbiotic relationships with plant roots."
 
 ## Usage
 
