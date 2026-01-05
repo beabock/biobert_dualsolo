@@ -14,11 +14,10 @@ This supplementary file provides the label definitions used in the BioBERT binar
 ## Detailed Label Descriptions
 
 ### Solo (Label = 0)
-Abstracts classified as "solo" describe fungi that are reported to occupy **a single, specialized trophic mode**. Examples include:
+Abstracts classified as "solo" describe fungi that are reported to occupy a single, specialized trophic mode. Examples include:
 
-- **Obligate symbionts**: Fungi that require a host organism and cannot complete their life cycle independently (e.g., obligate mycorrhizal fungi, obligate biotrophs)
+- **Obligate symbionts**: Fungi that require a host organism and cannot complete their life cycle independently (e.g., obligate biotrophs)
 - **Strict saprotrophs**: Fungi that exclusively decompose dead organic matter
-- **Obligate pathogens**: Fungi that can only obtain nutrients from living host tissue
 - **Strictly endophytic**: Fungi that live within plant tissues without causing disease and show no other lifestyle
 
 **Example search terms used:**
@@ -27,7 +26,7 @@ Abstracts classified as "solo" describe fungi that are reported to occupy **a si
 - "exclusive saprotroph"
 
 ### Dual (Label = 1)
-Abstracts classified as "dual" describe fungi that are reported to occupy **multiple trophic modes**, either simultaneously, sequentially, or depending on environmental context. Examples include:
+Abstracts classified as "dual" describe fungi that are reported to occupy multiple trophic modes, either simultaneously, sequentially, or depending on environmental context. Examples include:
 
 - **Facultative pathogens/saprotrophs**: Fungi that can switch between pathogenic and saprotrophic lifestyles
 - **Endophyte-saprotroph continuum**: Fungi that transition from endophytic to saprotrophic phases
@@ -51,7 +50,7 @@ The following trophic modes are commonly referenced in fungal ecology literature
 | Trophic Mode | Description |
 |--------------|-------------|
 | **Saprotroph** | Decomposes dead organic matter |
-| **Symbiont (Mycorrhizal)** | Forms mutualistic associations with plant roots |
+| **Symbiont** | Forms symbioses with plant roots |
 | **Pathogen** | Causes disease in living hosts (plants, animals, fungi) |
 | **Endophyte** | Lives within plant tissues without causing apparent disease |
 | **Parasite** | Obtains nutrients at the expense of a living host |
