@@ -20,15 +20,40 @@ Addresses reviewer comments: R1-2a, R1-2b, R1-2c, R1-5b, R2-4, R2-5
 """
 
 import os
+import sys
 import json
 import time
 import shutil
 import glob
 import random
 import warnings
+import logging
 from datetime import datetime
 from io import BytesIO
+from pathlib import Path
 import base64
+
+# ===== LOGGING SETUP =====
+# Create logs directory
+LOGS_DIR = Path(__file__).parent / "logs" if '__file__' in dir() else Path("logs")
+LOGS_DIR.mkdir(exist_ok=True)
+
+# Create timestamped log file
+log_filename = LOGS_DIR / f"pipeline_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+
+# Configure logging to both file and console
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)s | %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.FileHandler(log_filename),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
+logger.info(f"Logging to: {log_filename}")
+# ===== END LOGGING SETUP =====
 
 import pandas as pd
 import numpy as np
@@ -70,7 +95,14 @@ torch.backends.cudnn.benchmark = False
 set_seed(SEED)
 os.environ['PYTHONHASHSEED'] = str(SEED)
 
-print(f"✅ All random seeds set to {SEED} for reproducible results")
+logger.info(f"All random seeds set to {SEED} for reproducible results")
+
+# ===== DEVICE INFO =====
+if torch.cuda.is_available():
+    logger.info(f"GPU detected: {torch.cuda.get_device_name(0)}")
+    logger.info(f"GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
+else:
+    logger.warning("No GPU detected - running on CPU (will be slower)")
 # ===== END REPRODUCIBILITY SETUP =====
 
 # ===== MODEL CONFIGURATIONS =====
@@ -95,6 +127,12 @@ HYPERPARAMS = {
 }
 
 N_FOLDS = 5
+
+# ===== OUTPUT DIRECTORIES =====
+RESULTS_DIR = Path("results")
+RESULTS_DIR.mkdir(exist_ok=True)
+FIGURES_DIR = Path("figures")
+FIGURES_DIR.mkdir(exist_ok=True)
 
 # ===== DATASET CLASS =====
 class TextDataset(Dataset):
@@ -221,7 +259,7 @@ def compute_token_length_stats(all_df, tokenizer_name='monologg/biobert_v1.1_pub
     os.makedirs('results', exist_ok=True)
     with open(stats_path, 'w') as f:
         json.dump(stats, f, indent=2)
-    print(f"  Token stats saved to: {stats_path}")
+    logger.info(f"Token stats saved to: {stats_path}")
     
     return stats
 
@@ -231,7 +269,7 @@ def train_single_fold(model_name, base_model_path, train_texts, train_labels,
                       eval_texts, eval_labels, fold_idx, output_dir):
     """Train a model on a single fold and return metrics"""
     
-    print(f"\n  Training fold {fold_idx + 1}/{N_FOLDS}...")
+    logger.info(f"Training fold {fold_idx + 1}/{N_FOLDS}...")
     
     # Load model and tokenizer
     model = AutoModelForSequenceClassification.from_pretrained(base_model_path, num_labels=2)
@@ -272,7 +310,7 @@ def train_single_fold(model_name, base_model_path, train_texts, train_labels,
         save_steps=500,
         logging_steps=1,
         logging_strategy='steps',
-        eval_strategy='epoch',
+        evaluation_strategy='epoch',
         save_strategy='epoch',
         load_best_model_at_end=True,
         metric_for_best_model=HYPERPARAMS['metric_for_best_model'],
@@ -335,10 +373,10 @@ def train_single_fold(model_name, base_model_path, train_texts, train_labels,
 def run_kfold_for_model(model_name, base_model_path, all_df):
     """Run stratified k-fold CV for a single model"""
     
-    print(f"\n{'='*60}")
-    print(f"Running {N_FOLDS}-fold CV for: {model_name}")
-    print(f"Base model: {base_model_path}")
-    print(f"{'='*60}")
+    logger.info(f"{'='*60}")
+    logger.info(f"Running {N_FOLDS}-fold CV for: {model_name}")
+    logger.info(f"Base model: {base_model_path}")
+    logger.info(f"{'='*60}")
     
     start_time = time.time()
     
@@ -371,7 +409,7 @@ def run_kfold_for_model(model_name, base_model_path, all_df):
         all_predictions.append(pred_df)
         all_log_histories.append(log_history)
         
-        print(f"  Fold {fold_idx + 1} metrics: Acc={fold_metrics['accuracy']:.4f}, F1={fold_metrics['f1']:.4f}")
+        logger.info(f"  Fold {fold_idx + 1} metrics: Acc={fold_metrics['accuracy']:.4f}, F1={fold_metrics['f1']:.4f}")
     
     elapsed_time = time.time() - start_time
     
@@ -396,17 +434,18 @@ def run_kfold_for_model(model_name, base_model_path, all_df):
     predictions_path = f'results/fold_predictions_{model_name}.csv'
     os.makedirs('results', exist_ok=True)
     predictions_df.to_csv(predictions_path, index=False)
-    print(f"\n  Predictions saved to: {predictions_path}")
+    logger.info(f"Predictions saved to: {predictions_path}")
     
     # Save aggregated metrics
     metrics_path = f'results/metrics_{model_name}.json'
     with open(metrics_path, 'w') as f:
         json.dump(aggregated_metrics, f, indent=2)
+    logger.info(f"Metrics saved to: {metrics_path}")
     
-    print(f"\n  {model_name} Summary:")
-    print(f"    Accuracy: {aggregated_metrics['accuracy_mean']:.4f} ± {aggregated_metrics['accuracy_std']:.4f}")
-    print(f"    F1 Score: {aggregated_metrics['f1_mean']:.4f} ± {aggregated_metrics['f1_std']:.4f}")
-    print(f"    Time: {aggregated_metrics['elapsed_time_formatted']}")
+    logger.info(f"{model_name} Summary:")
+    logger.info(f"  Accuracy: {aggregated_metrics['accuracy_mean']:.4f} ± {aggregated_metrics['accuracy_std']:.4f}")
+    logger.info(f"  F1 Score: {aggregated_metrics['f1_mean']:.4f} ± {aggregated_metrics['f1_std']:.4f}")
+    logger.info(f"  Time: {aggregated_metrics['elapsed_time_formatted']}")
     
     return aggregated_metrics, predictions_df, all_fold_metrics
 
@@ -415,7 +454,7 @@ def run_kfold_for_model(model_name, base_model_path, all_df):
 def generate_error_analysis(all_predictions_dict):
     """Generate error analysis across all models"""
     
-    print("\nGenerating error analysis...")
+    logger.info("Generating error analysis...")
     
     # Combine all predictions
     all_preds = []
@@ -444,12 +483,12 @@ def generate_error_analysis(all_predictions_dict):
     os.makedirs('figures', exist_ok=True)
     misclassified.to_csv(error_path, index=False)
     
-    print(f"  Error analysis saved to: {error_path}")
-    print(f"  Total misclassifications across all models/folds: {len(misclassified)}")
+    logger.info(f"Error analysis saved to: {error_path}")
+    logger.info(f"Total misclassifications across all models/folds: {len(misclassified)}")
     
     # Summary: unique abstracts misclassified by multiple models
     multi_model_errors = misclass_counts[misclass_counts['n_models_misclassified'] > 1]
-    print(f"  Abstracts misclassified by 2+ models: {len(multi_model_errors)}")
+    logger.info(f"Abstracts misclassified by 2+ models: {len(multi_model_errors)}")
     
     return misclassified
 
@@ -458,7 +497,7 @@ def generate_error_analysis(all_predictions_dict):
 def generate_comparison_bar_chart(all_metrics_dict):
     """Generate comparison bar chart with error bars"""
     
-    print("\nGenerating comparison bar chart...")
+    logger.info("Generating comparison bar chart...")
     
     models = list(all_metrics_dict.keys())
     metrics = ['accuracy', 'precision', 'recall', 'f1']
@@ -717,13 +756,38 @@ def main():
     all_metrics_dict = {}
     all_predictions_dict = {}
     
-    # Run k-fold CV for each model
+    # Run k-fold CV for each model (with resume capability)
     for model_name, base_model_path in MODELS.items():
-        metrics, predictions, fold_metrics = run_kfold_for_model(
-            model_name, base_model_path, all_df
-        )
-        all_metrics_dict[model_name] = metrics
-        all_predictions_dict[model_name] = predictions
+        metrics_file = RESULTS_DIR / f"metrics_{model_name}.json"
+        predictions_file = RESULTS_DIR / f"fold_predictions_{model_name}.csv"
+        
+        # Check if this model already completed (resume capability)
+        if metrics_file.exists() and predictions_file.exists():
+            logger.info(f"{'='*60}")
+            logger.info(f"SKIPPING {model_name} - results already exist")
+            logger.info(f"  Metrics: {metrics_file}")
+            logger.info(f"  Predictions: {predictions_file}")
+            logger.info(f"{'='*60}")
+            
+            # Load existing results
+            with open(metrics_file, 'r') as f:
+                metrics = json.load(f)
+            predictions = pd.read_csv(predictions_file)
+            all_metrics_dict[model_name] = metrics
+            all_predictions_dict[model_name] = predictions
+            continue
+        
+        try:
+            metrics, predictions, fold_metrics = run_kfold_for_model(
+                model_name, base_model_path, all_df
+            )
+            all_metrics_dict[model_name] = metrics
+            all_predictions_dict[model_name] = predictions
+        except Exception as e:
+            logger.error(f"FAILED: {model_name} - {type(e).__name__}: {e}")
+            logger.exception("Full traceback:")
+            # Continue to next model instead of crashing
+            continue
     
     # Generate error analysis
     error_df = generate_error_analysis(all_predictions_dict)
@@ -740,19 +804,19 @@ def main():
     combined_metrics_path = 'results/all_model_metrics.json'
     with open(combined_metrics_path, 'w') as f:
         json.dump(all_metrics_dict, f, indent=2)
-    print(f"\nCombined metrics saved to: {combined_metrics_path}")
+    logger.info(f"Combined metrics saved to: {combined_metrics_path}")
     
     total_elapsed = time.time() - total_start_time
-    print("\n" + "="*70)
-    print(f"Pipeline completed successfully!")
-    print(f"Total time: {total_elapsed/60:.1f} minutes")
-    print("="*70 + "\n")
+    logger.info("="*70)
+    logger.info(f"Pipeline completed successfully!")
+    logger.info(f"Total time: {total_elapsed/60:.1f} minutes")
+    logger.info("="*70)
     
     # Print final summary
-    print("FINAL SUMMARY")
-    print("-" * 50)
+    logger.info("FINAL SUMMARY")
+    logger.info("-" * 50)
     for model_name, metrics in all_metrics_dict.items():
-        print(f"{model_name:20s}: Acc={metrics['accuracy_mean']:.4f}±{metrics['accuracy_std']:.4f}, "
+        logger.info(f"{model_name:20s}: Acc={metrics['accuracy_mean']:.4f}±{metrics['accuracy_std']:.4f}, "
               f"F1={metrics['f1_mean']:.4f}±{metrics['f1_std']:.4f}, "
               f"Time={metrics['elapsed_time_formatted']}")
 
@@ -787,5 +851,5 @@ Note: This will take considerable time as it trains 4 models × 5 folds = 20 tra
 """
 
 if __name__ == '__main__':
-    print(INSTRUCTIONS)
+    logger.info(INSTRUCTIONS)
     main()

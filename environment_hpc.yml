@@ -1,0 +1,17 @@
+name: nlp_bio
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - pandas
+  - numpy
+  - matplotlib
+  - seaborn
+  - scikit-learn
+  - pip
+  - pip:
+    - torch
+    - transformers
+    - datasets
+    - accelerate

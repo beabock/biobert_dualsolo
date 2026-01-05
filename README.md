@@ -1,63 +1,49 @@
+
 # BioBERT Dual Lifestyle Classifier
 
-This project implements a pilot experiment using BioBERT (a biomedical language model) to classify scientific abstracts into two categories: "dual" (fungi that can occupy more than one trophic mode, e.g., both saprotrophic and pathogenic) and "solo" (fungi that can only occupy one trophic mode, e.g., strictly saprotrophic or pathogenic).
+This project implements a pilot workflow for automated classification of fungal trophic modes from scientific abstracts using transformer-based language models. The pipeline now supports four models (BioBERT, BERT-base-cased, BERT-base-uncased, BiodivBERT) and stratified 5-fold cross-validation, with robust error analysis and reproducibility features.
 
 ## Overview
 
-Fungi exhibit diverse lifestyles ranging from solitary saprotrophs to complex symbionts. Accurately classifying research papers on fungal lifestyles is crucial for advancing mycological research, especially in the context of a Saprotrophy-Symbiosis Continuum (Martin and Tan, 2025). This pilot study demonstrates the feasibility of using fine-tuned BioBERT models for automated classification of fungal lifestyle descriptions from scientific abstracts.
-
-The model achieves approximately 86% accuracy on a test set of manually curated abstracts, showing promise for scaling to larger datasets and broader mycological literature.
+Fungi exhibit diverse lifestyles, from solitary saprotrophs to complex symbionts. Accurately classifying fungal lifestyles is crucial for ecological research and trait database development. This project demonstrates that fine-tuned transformer models can automate this process, with BioBERT and BERT-cased achieving ~89% accuracy in cross-validation.
 
 ## Methodology
 
 ### Data Collection
-- **Source**: Curated BibTeX files containing fungal research papers
+- **Source**: Curated abstracts from Web of Science using documented Boolean queries (see `datasets/search_strat.md`)
 - **Categories**:
-  - Dual (n=28): Papers describing fungi that can occupy multiple trophic modes
-  - Solo (n=28): Papers describing fungi limited to a single trophic mode
-- **Total abstracts**: 58 (after preprocessing)
+  - Dual (n=28): Fungi occupying multiple trophic modes
+  - Solo (n=28): Fungi restricted to a single trophic mode
+- **Total abstracts**: 56 (after curation and deduplication)
 
 ### Preprocessing
-- Parsed BibTeX files using `parse_bib.py` to extract titles, abstracts, and keywords
-- Cleaned HTML/LaTeX formatting and special characters
-- Tokenized abstracts using BioBERT tokenizer (max length 512 tokens)
-- Train/test split: 60% training, 40% testing
+- Parsed and cleaned abstracts using `parse_bib.py` and `nlp_prep.py`
+- Tokenized with model-specific tokenizers (max length 512 tokens)
+- Token length statistics and truncation analysis included for reproducibility
 
-### Model Fine-tuning
-- **Base Model**: `monologg/biobert_v1.1_pubmed` (BioBERT v1.1 trained on PubMed)
-- **Task**: Binary sequence classification
-- **Training Parameters**:
-  - Learning rate: 5e-5
-  - Batch size: 8
-  - Epochs: 10
-  - Optimizer: AdamW with weight decay
-- **Enhanced Monitoring**:
-  - Real-time training curve generation
-  - Incremental plotting after each epoch
-  - Storage-optimized checkpoint management
-- **Hardware**: Trained on CPU/GPU (depending on availability)
+### Model Training & Evaluation
+- **Models compared**:
+  - `monologg/biobert_v1.1_pubmed` (BioBERT)
+  - `google-bert/bert-base-cased`
+  - `google-bert/bert-base-uncased`
+  - `NoYo25/BiodivBERT`
+- **Cross-validation**: Stratified 5-fold CV (all samples used for both training and testing)
+- **Hyperparameters**: Standardized across all models (20 epochs max, early stopping, batch size 8, learning rate 5e-5)
+- **Scripts**: Use `generate_report_v2.py` for full pipeline, including multi-model comparison, error analysis, and visualizations
 
-### Evaluation
-- **Metrics**: Accuracy, Precision, Recall, F1-score
-- **Confusion Matrix**: Analysis of prediction errors
-- **Training Curves**: Loss and accuracy monitoring during fine-tuning
+### Results
 
-## Results
+| Model               | F1 Score         | Accuracy         | Training Time |
+|---------------------|------------------|------------------|--------------|
+| **BioBERT**         | **0.892 ± 0.120**| **0.894 ± 0.116**| 10.3 min      |
+| BERT-base-cased     | 0.892 ± 0.100    | 0.892 ± 0.100    | 11.1 min      |
+| BiodivBERT          | 0.747 ± 0.198    | 0.771 ± 0.166    | 35.3 min      |
+| BERT-base-uncased   | 0.700 ± 0.241    | 0.749 ± 0.177    | 35.3 min      |
 
-| Metric | Value |
-|--------|-------|
-| Accuracy | 0.8636 |
-| Precision | 0.8675 |
-| Recall | 0.8583 |
-| F1 Score | 0.8611 |
-
-### Key Findings
-- The model performs well at distinguishing single vs. multiple trophic mode fungal descriptions
-- Highest accuracy on abstracts with clear trophic mode indicators
-- Some confusion between borderline cases requiring domain expertise
-- Training converged within 10 epochs, indicating efficient learning
-- Enhanced monitoring system provides real-time training curve visualization
-- Storage-optimized training prevents disk space issues during model development
+#### Key Findings
+- BioBERT and BERT-cased perform equally well; case sensitivity is important for taxonomic text
+- BiodivBERT and uncased BERT underperform, showing domain adaptation alone is not sufficient
+- Error analysis and confusion matrices are included for transparency
 
 ## Usage
 
@@ -74,29 +60,63 @@ pip install -r requirements.txt
 1. **Parse and prepare data**:
    ```bash
    python parse_bib.py
+   python nlp_prep.py
    ```
 
-2. **Run full pipeline (data loading, training, evaluation, report generation)**:
+2. **Run full pipeline (multi-model CV, evaluation, report generation)**:
    ```bash
-   python generate_report.py
+   python generate_report_v2.py
    ```
 
-3. **Interactive exploration**: Open `bioBERT_dual_lifestyle_classifier.ipynb` in Jupyter
+3. **Interactive exploration**: Open `bioBERT_dual_lifestyle_classifier.ipynb` in Jupyter for step-by-step analysis and visualization
 
-### Monitoring Training Progress
+### Monitoring & Outputs
+- Training curves, model comparison plots, confusion matrices, and error analysis are saved in `figures/`
+- All summary metrics and per-fold predictions are in `results/`
+- Supplementary files: `datasets/trophic_mode_labels.md`, `datasets/search_strat.md`, `assets/pipeline_diagram.md`
 
-The enhanced training pipeline provides real-time monitoring capabilities:
+## File Structure
+- `datasets/`: Labeled abstracts, search strategy, and label definitions
+- `parse_bib.py`, `nlp_prep.py`: Data extraction and tokenization
+- `generate_report_v2.py`: Main pipeline for multi-model CV and reporting
+- `bioBERT_dual_lifestyle_classifier.ipynb`: Interactive notebook
+- `results/`: Metrics, predictions, and token stats
+- `figures/`: Training curves, model comparison, confusion matrices, error analysis
+- `project_report.html`, `project_report_comparison.html`: Generated reports
 
-- **Live Training Curves**: Automatically generated plots showing training loss, validation loss, and validation accuracy
-- **Incremental Updates**: Plots update after each epoch, allowing you to monitor convergence in real-time
-- **Storage Efficiency**: Single plot file that's overwritten, minimizing disk usage
-- **Debug Output**: Console messages confirm successful plot generation and training progress
+## Limitations and Future Work
 
-During training, check `figures/training_curves.png` to observe:
-- Steady decrease in training loss
-- Validation loss following training loss with minimal gap
-- Increasing validation accuracy
-- Early detection of overfitting or training issues
+This pilot study demonstrates proof-of-concept but has several limitations:
+- Small dataset size (56 abstracts)
+- Manual curation required for training data
+- Binary classification (solo/dual) oversimplifies ecological reality
+- Domain-specific performance may vary
+
+Future directions include:
+- Expanding to larger, more diverse datasets
+- Multi-label classification for ecological gradients
+- Integration with environmental metadata and genomic data
+- Active learning for efficient annotation
+- Further enhancements to monitoring and reporting
+
+## Citations
+
+For grant applications, cite this work as:
+
+Beatrice Bock. (2025). *BioBERT Dual Lifestyle Classifier: A Pilot Study for Automated Classification of Fungal Lifestyles from Scientific Abstracts* [Computer software]. Available at: https://github.com/beabock/biobert_dualsolo
+
+### References
+- Lee, J., et al. (2020). BioBERT: a pre-trained biomedical language representation model for biomedical text mining. *Bioinformatics*, 36(4), 1234-1240.
+- Devlin, J., et al. (2019). BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding. *Proceedings of the 2019 conference of the North American chapter of the association for computational linguistics: human language technologies, volume 1 (long and short papers).* *arXiv preprint arXiv:1810.04805*.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contact
+
+Beatrice Bock
+bmb646@nau.edu
 
 ### File Structure
 - `datasets/`: Source BibTeX files (dual.bib, solo.bib)

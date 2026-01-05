@@ -41,7 +41,7 @@ Abstracts without explicit trophic mode statements were excluded.
 1. Selected articles organized in **Zotero** by class (solo folder, dual folder)
 2. Exported as BibTeX files (`solo.bib`, `dual.bib`)
 3. Processed with `parse_bib.py` to extract abstracts and create `abstracts.csv`
-4. Split into training (60%) and test (40%) sets with stratified sampling
+4. Evaluated using stratified 5-fold cross-validation (rather than single train/test split) to maximize statistical robustness with small dataset
 
 ---
 
@@ -52,6 +52,25 @@ Abstracts without explicit trophic mode statements were excluded.
 | Solo (0) | 28 | Single trophic mode only |
 | Dual (1) | 28 | Multiple trophic modes |
 | **Total** | **56** | |
+
+---
+
+## Model Training & Evaluation
+
+**Models Compared (5-fold CV):**
+1. BERT-base-uncased (`google-bert/bert-base-uncased`)
+2. BERT-base-cased (`google-bert/bert-base-cased`)
+3. BioBERT v1.1 (`monologg/biobert_v1.1_pubmed`)
+4. BiodivBERT (`NoYo25/BiodivBERT`)
+
+**Best Performance:**
+- BioBERT and BERT-cased: ~89% accuracy (F1 = 0.892)
+- Key finding: Case sensitivity matters more than domain-specific pre-training
+
+**Evaluation Approach:**
+- Stratified 5-fold cross-validation (seed=42)
+- All 56 samples used for both training and testing across folds
+- Results reported as mean ± standard deviation
 
 ---
 
