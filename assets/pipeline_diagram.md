@@ -44,8 +44,7 @@
 │                                             │                                │
 │                                             ▼                                │
 │                         ┌──────────────────────────────┐                    │
-│                         │  Stratified Train/Test Split │                    │
-│                         │  or 5-Fold Cross-Validation  │                    │
+│                         │  5-Fold Cross-Validation                      │
 │                         └──────────────────────────────┘                    │
 │                                                                              │
 └─────────────────────────┬────────────────────────────────────────────────────┘
@@ -56,15 +55,20 @@
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │   ┌───────────────────────────────────────────────────┐                     │
-│   │  BioBERT v1.1 (monologg/biobert_v1.1_pubmed)      │                     │
+│   │  Models evaluated:                                 │                     │
+│   │  • BERT-base-uncased (google-bert/bert-base-uncased) │                   │
+│   │  • BERT-base-cased  (google-bert/bert-base-cased)   │                   │
+│   │  • BioBERT v1.1    (monologg/biobert_v1.1_pubmed)   │                   │
+│   │  • BiodivBERT      (NoYo25/BiodivBERT)             │                   │
 │   │  ─────────────────────────────────────────────────│                     │
-│   │  Hyperparameters:                                 │                     │
-│   │  • Learning rate: 5e-5                            │                     │
-│   │  • Batch size: 8                                  │                     │
-│   │  • Max epochs: 20                                 │                     │
-│   │  • Early stopping: patience=3                     │                     │
-│   │  • Dropout: 0.2                                   │                     │
-│   │  • Optimizer: AdamW                               │                     │
+│   │  Hyperparameters (identical across models):        │                     │
+│   │  • Learning rate: 5e-5                             │                     │
+│   │  • Batch size: 8                                   │                     │
+│   │  • Max epochs: 20                                  │                     │
+│   │  • Early stopping: patience=3                      │                     │
+│   │  • Dropout: 0.2                                    │                     │
+│   │  • Optimizer: AdamW                                │                     │
+│   │  • Cross-validation: Stratified 5-fold CV          │                     │
 │   └───────────────────────────────────────────────────┘                     │
 │                         │                                                    │
 │                         ▼                                                    │
@@ -101,13 +105,7 @@
 │   ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐             │
 │   │  Fine-tuned     │  │  Predictions    │  │  HTML Report    │             │
 │   │  Model          │  │  (CSV)          │  │  with Figures   │             │
-│   │  (safetensors)  │  │                 │  │                 │             │
-│   └─────────────────┘  └─────────────────┘  └─────────────────┘             │
-│                                                                              │
-│   All outputs available at:                                                  │
-│   • GitHub: github.com/beabock/biobert_dualsolo                             │
-│   • Zenodo: doi.org/10.5281/zenodo.17343492                                 │
-│                                                                              │
+│   └─────────────────┘  └─────────────────┘  └─────────────────┘             │                                                                            │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 

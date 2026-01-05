@@ -27,7 +27,7 @@ We agree that this information is essential for reproducibility. We have added t
 *"If articles containing abstracts that were longer than 512 characters were discarded due to them being longer than the maximum 512 tokens that BioBERT could consume, then that is of course a valid reason to discard them. If this is the case though, it perhaps ought to be mentioned in this section."*
 
 **Response:**  
-We have clarified the token handling in the Preprocessing section. The tokenizer is configured with `truncation=True` and `max_length=512`, which would truncate longer texts. However, we note that abstract lengths in our dataset ranged from 150–500 words (mean 360), and all abstracts fell within the 512 token limit—no information was lost to truncation. We have also added a function to the pipeline that computes and reports token length statistics both before and after truncation, confirming that 0% of abstracts exceeded the limit.
+We have clarified the token handling in the Preprocessing section. The tokenizer is configured with `truncation=True` and `max_length=512`, so any abstract longer than 512 tokens is truncated. To quantify this, we added a function to the pipeline that computes and reports token length statistics both before and after truncation. In our dataset, 3 out of 56 abstracts (5.4%) exceeded the 512-token limit and were truncated; the remaining 53 abstracts were fully retained. These statistics are now reported in the manuscript and supplementary materials.
 
 ---
 
@@ -109,7 +109,7 @@ We agree that the related work discussion fits better in the Introduction. We ha
 *"No error analysis is provided. Abstracts that BioBERT misclassified ought to be manually inspected and intuitive suggestions given for why it may have misclassified them."*
 
 **Response:**  
-We have added comprehensive error analysis to the pipeline. The system now exports all misclassifications to `figures/error_analysis.csv` with columns for abstract text, true label, predicted label, model, fold, and number of models that misclassified each sample. Samples misclassified by multiple models are flagged for priority manual review, as these likely represent genuinely ambiguous cases. The HTML report includes the top misclassifications, enabling inspection of problematic abstracts across all four models.
+We have added comprehensive error analysis to the pipeline. The system now exports all misclassifications to `figures/error_analysis.csv` with columns for abstract text, true label, predicted label, model, fold, and number of models that misclassified each sample. Samples misclassified by multiple models are flagged for priority manual review, as these likely represent genuinely ambiguous cases. 
 
 ---
 
@@ -117,7 +117,7 @@ We have added comprehensive error analysis to the pipeline. The system now expor
 *"Future Work is mentioned but ought to be explained further, albeit very briefly, in particular: i) Expanding dataset scope... ii) Ecological gradients... iii) Environmental metadata or genomic predictors..."*
 
 **Response:**  
-We have substantially expanded the Future Work section with five detailed directions: (1) **Expanding dataset scope** — increasing to hundreds/thousands of abstracts, including full-text articles, and extending to taxa beyond fungi; (2) **Multi-label classification for ecological gradients** — predicting specific trophic modes as non-exclusive labels to capture the continuous nature of ecological roles; (3) **Integration with environmental metadata** — linking text-derived traits with geographic, climatic, or substrate data for context-aware predictions; (4) **Genomic and metabolomic predictors** — combining textual information with molecular data; (5) **Domain-specific pretraining** — training BERT-style models from scratch on ecological/mycological corpora.
+We have substantially expanded the Future Work section with five detailed directions: (1) Expanding dataset scope: increasing to hundreds/thousands of abstracts, including full-text articles, and extending to taxa beyond fungi; (2) Multi-label classification for ecological gradients: predicting specific trophic modes as non-exclusive labels to capture the continuous nature of ecological roles; (3) Integration with environmental metadata: linking text-derived traits with geographic, climatic, or substrate data for context-aware predictions; (4) Genomic and metabolomic predictors: combining textual information with molecular data; (5) Domain-specific pretraining: training BERT-style models from scratch on ecological/mycological corpora.
 
 ---
 
@@ -127,7 +127,7 @@ We have substantially expanded the Future Work section with five detailed direct
 *"I recommend separating more clearly the Discussion and Conclusions. A concise Conclusions section that highlights the key take home messages and practical implications of the workflow would make the paper easier to read and to cite."*
 
 **Response:**  
-We have restructured this section into four distinct parts: (1) **Discussion** — interpretation of results and comparison with existing approaches; (2) **Limitations** — explicit acknowledgment of sample size, binary simplification, and single-labeler constraints; (3) **Future Work** — detailed directions for extension; and (4) **Conclusions** — a concise summary highlighting three key contributions: proof-of-concept validation, reproducible workflow, and trait database integration potential.
+We have restructured this section into four distinct parts: (1) Discussion: interpretation of results and comparison with existing approaches; (2) Limitations:  explicit acknowledgment of sample size, binary simplification, and single-labeler constraints; (3) Future Work: detailed directions for extension; and (4) Conclusions: a concise summary highlighting three key contributions: proof-of-concept validation, reproducible workflow, and trait database integration potential.
 
 ---
 
@@ -143,7 +143,7 @@ We have clarified the selection process in the Dataset Curation section. From th
 *"If space allows, it would be valuable to include a simple diagram of the pipeline or workflow, from data collection through preprocessing and model training to evaluation."*
 
 **Response:**  
-We have created a pipeline workflow diagram (assets/pipeline_diagram.md) that visualizes the complete workflow from data collection through evaluation. The diagram shows four main stages: (1) Data Collection (Web of Science searches → manual review → labeled abstracts), (2) Preprocessing (text cleaning → tokenization → train/test split or k-fold CV), (3) Model Training (BioBERT fine-tuning with hyperparameters), and (4) Evaluation (metrics, confusion matrix, learning curves). A simplified flow is also provided for quick reference.
+We have created a pipeline workflow diagram (assets/pipeline_diagram.md) that visualizes the complete workflow from data collection through evaluation. The diagram shows four main stages: (1) Data Collection (Web of Science searches → manual review → labeled abstracts), (2) Preprocessing (text cleaning → tokenization → train/test split or k-fold CV), (3) Model Training (BioBERT fine-tuning with hyperparameters), and (4) Evaluation (metrics, confusion matrix, learning curves). 
 
 ---
 
