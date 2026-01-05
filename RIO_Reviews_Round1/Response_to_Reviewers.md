@@ -143,7 +143,7 @@ We have clarified the selection process in the Dataset Curation section. From th
 *"If space allows, it would be valuable to include a simple diagram of the pipeline or workflow, from data collection through preprocessing and model training to evaluation."*
 
 **Response:**  
-We have created a pipeline workflow diagram (assets/pipeline_diagram.md) that visualizes the complete workflow from data collection through evaluation. The diagram shows four main stages: (1) Data Collection (Web of Science searches → manual review → labeled abstracts), (2) Preprocessing (text cleaning → tokenization → train/test split or k-fold CV), (3) Model Training (BioBERT fine-tuning with hyperparameters), and (4) Evaluation (metrics, confusion matrix, learning curves). 
+We have created a pipeline workflow diagram (assets/pipeline_diagram.md) that visualizes the complete workflow from data collection through evaluation and included this as Figure 4 in the text. The diagram shows four main stages: (1) Data Collection (Web of Science searches → manual review → labeled abstracts), (2) Preprocessing (text cleaning → tokenization → train/test split or k-fold CV), (3) Model Training (BioBERT fine-tuning with hyperparameters), and (4) Evaluation (metrics, confusion matrix, learning curves). 
 
 ---
 
